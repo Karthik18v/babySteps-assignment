@@ -13,7 +13,6 @@ function EditAppointment() {
     doctorId: "",
     patientName: "",
     date: "",
-    duration: 30,
     appointmentType: "",
     notes: "",
   });
@@ -27,12 +26,18 @@ function EditAppointment() {
       const response = await axios.get(`${API_BASE_URL}/${id}`);
       const data = response.data;
 
-      // Ensure date format is suitable for input[type="datetime-local"]
+      // Ensure correct date format for datetime-local input
       const formattedDate = data.date
-        ? new Date(data.date).toISOString().slice(0, 16) // Converts to "YYYY-MM-DDTHH:MM"
+        ? new Date(data.date).toISOString().slice(0, 16)
         : "";
 
-      setAppointment({ ...data, date: formattedDate });
+      setAppointment({
+        doctorId: data.doctorId,
+        patientName: data.patientName,
+        date: formattedDate,
+        appointmentType: data.appointmentType,
+        notes: data.notes || "",
+      });
     } catch (err) {
       alert("Failed to load appointment details");
     }
@@ -45,7 +50,7 @@ function EditAppointment() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API_BASE_URL}/${id}`, appointment);
+      await axios.put(`${API_BASE_URL}/${id}`, { ...appointment, duration: 60 });
       alert("Appointment updated successfully");
       navigate("/appointments");
     } catch (err) {
@@ -58,60 +63,23 @@ function EditAppointment() {
   };
 
   return (
-    <div className="edit-appointment-container">
-      <h2>Edit Appointment</h2>
+    <div className="update-appointment-container">
+      <h2>Update Appointment</h2>
       <form onSubmit={handleSubmit}>
         <label>Doctor ID:</label>
-        <input
-          type="text"
-          name="doctorId"
-          value={appointment.doctorId}
-          onChange={handleChange}
-          required
-        />
+        <input type="text" name="doctorId" value={appointment.doctorId} onChange={handleChange} required />
 
         <label>Patient Name:</label>
-        <input
-          type="text"
-          name="patientName"
-          value={appointment.patientName}
-          onChange={handleChange}
-          required
-        />
+        <input type="text" name="patientName" value={appointment.patientName} onChange={handleChange} required />
 
         <label>Date:</label>
-        <input
-          type="datetime-local"
-          name="date"
-          value={appointment.date}
-          onChange={handleChange}
-          required
-        />
-
-        <label>Duration (minutes):</label>
-        <input
-          type="number"
-          name="duration"
-          value={appointment.duration}
-          onChange={handleChange}
-          required
-        />
+        <input type="datetime-local" name="date" value={appointment.date} onChange={handleChange} required />
 
         <label>Appointment Type:</label>
-        <input
-          type="text"
-          name="appointmentType"
-          value={appointment.appointmentType}
-          onChange={handleChange}
-          required
-        />
+        <input type="text" name="appointmentType" value={appointment.appointmentType} onChange={handleChange} required />
 
         <label>Notes:</label>
-        <textarea
-          name="notes"
-          value={appointment.notes}
-          onChange={handleChange}
-        />
+        <textarea name="notes" value={appointment.notes} onChange={handleChange} />
 
         <button type="submit">Update Appointment</button>
       </form>

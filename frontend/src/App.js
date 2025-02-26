@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import DoctorList from "./components/DoctorList";
 import "./App.css"; // Import the CSS file for styling
 import AppointmentSchedule from "./components/AppointmentSchedule";
+import Appointments from "./components/Appointments";
+import EditAppointment from "./components/EditAppointment";
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
             path="/doctors/:id/schedule"
             element={<AppointmentSchedule />}
           />
+          <Route path="/appointments" element={<Appointments />} />
+          <Route path="/appointments/edit/:id" element={<EditAppointment />} />
         </Routes>
       </div>
     </Router>
