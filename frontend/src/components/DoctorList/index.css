@@ -1,0 +1,137 @@
+/* Container for the entire doctor list */
+.doctor-list-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f7fafc, #e2e8f0);
+    /* Gradient background */
+    padding: 40px 20px;
+    /* Increased padding */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Title styling */
+.doctor-list-title {
+    font-size: 2.5rem;
+    /* Larger font size */
+    font-weight: bold;
+    color: #2d3748;
+    margin-bottom: 2rem;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    /* Subtle text shadow */
+}
+
+/* Loading spinner */
+.loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Grid layout for doctors */
+.doctor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+    /* Increased gap between cards */
+    width: 100%;
+    max-width: 1200px;
+    padding: 20px;
+    /* Padding inside the grid */
+}
+
+/* Individual doctor card */
+.doctor-card {
+    background-color: #ffffff;
+    border-radius: 15px;
+    /* Rounded corners */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 20px;
+    /* Padding inside the card */
+}
+
+.doctor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Doctor image */
+.doctor-image-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.doctor-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #edf2f7;
+}
+
+/* Doctor details */
+.doctor-name {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #2d3748;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.doctor-specialization {
+    font-size: 0.875rem;
+    color: #4a5568;
+    text-align: center;
+    margin: 5px 0;
+}
+
+.doctor-experience {
+    font-size: 0.875rem;
+    color: #718096;
+    text-align: center;
+    margin: 5px 0;
+}
+
+/* Button styling */
+.doctor-actions {
+    background-color: #f7fafc;
+    padding: 20px;
+    /* Increased padding */
+    text-align: center;
+}
+
+.view-schedule-button {
+    background-color: #3498db;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    /* Rounded corners */
+    padding: 12px 24px;
+    /* Increased padding */
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.view-schedule-button:hover {
+    background-color: #2980b9;
+    transform: scale(1.05);
+    /* Slight scale effect on hover */
+}
