@@ -1,122 +1,171 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import "./index.css";
+const express = require("express");
+const Appointment = require("../model/Appointment");
+const router = express.Router();
+const moment = require("moment");
 
-const API_BASE_URL = "https://babysteps-assignment-nh1l.onrender.com/appointments";
+//create appointment
+router.post("/", async (req, res) => {
+  try {
+    const { doctorId, date, duration, appointmentType, patientName, notes } =
+      req.body;
 
-function EditAppointment() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+    //console.log(doctorId, date, duration, appointmentType, patientName, notes);
 
-  const [appointment, setAppointment] = useState({
-    doctorId: "",
-    patientName: "",
-    date: "",
-    duration: 30,
-    appointmentType: "",
-    notes: "",
-  });
-
-  useEffect(() => {
-    fetchAppointment();
-  }, []);
-
-  const fetchAppointment = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/${id}`);
-      const data = response.data;
-
-      // Ensure date format is suitable for input[type="datetime-local"]
-      const formattedDate = data.date
-        ? new Date(data.date).toISOString().slice(0, 16) // Converts to "YYYY-MM-DDTHH:MM"
-        : "";
-
-      setAppointment({ ...data, date: formattedDate });
-    } catch (err) {
-      alert("Failed to load appointment details");
+    // 🔍 Validate required fields
+    if (!doctorId || !date || !duration || !appointmentType || !patientName) {
+      return res.status(400).json({ message: "Required All Fields" });
     }
-  };
 
-  const handleChange = (e) => {
-    setAppointment({ ...appointment, [e.target.name]: e.target.value });
-  };
+    const appointmentStart = moment.utc(date);
+    const appointmentEnd = moment.utc(date).add(duration, "minutes");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(`${API_BASE_URL}/${id}`, appointment);
-      alert("Appointment updated successfully");
-      navigate("/appointments");
-    } catch (err) {
-      if (err.response && err.response.status === 409) {
-        alert("Selected slot is already booked! Please choose another time.");
-      } else {
-        alert("Error updating appointment");
-      }
+    // 🔍 Check for overlapping appointments
+    const existingAppointment = await Appointment.findOne({
+      doctorId,
+      $or: [
+        {
+          date: {
+            $lt: appointmentEnd.toDate(),
+            $gte: appointmentStart.toDate(),
+          },
+        },
+        {
+          $expr: {
+            $and: [
+              {
+                $lt: [
+                  { $add: ["$date", { $multiply: ["$duration", 60000] }] },
+                  appointmentEnd.toDate(),
+                ],
+              },
+              { $gte: ["$date", appointmentStart.toDate()] },
+            ],
+          },
+        },
+      ],
+    });
+
+    console.log(existingAppointment);
+
+    if (existingAppointment) {
+      return res.status(409).json({ message: "Slot already booked!" });
     }
-  };
 
-  return (
-    <div className="edit-appointment-container">
-      <h2>Edit Appointment</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Doctor ID:</label>
-        <input
-          type="text"
-          name="doctorId"
-          value={appointment.doctorId}
-          onChange={handleChange}
-          required
-        />
+    const newAppointment = new Appointment(req.body);
+    await newAppointment.save();
 
-        <label>Patient Name:</label>
-        <input
-          type="text"
-          name="patientName"
-          value={appointment.patientName}
-          onChange={handleChange}
-          required
-        />
+    return res
+      .status(201)
+      .json({ message: "Appointment booked successfully!" });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
 
-        <label>Date:</label>
-        <input
-          type="datetime-local"
-          name="date"
-          value={appointment.date}
-          onChange={handleChange}
-          required
-        />
+//get all  appointments
 
-        <label>Duration (minutes):</label>
-        <input
-          type="number"
-          name="duration"
-          value={appointment.duration}
-          onChange={handleChange}
-          required
-        />
+router.get("/", async (req, res) => {
+  try {
+    const appointments = await Appointment.find();
+    res.status(200).json(appointments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-        <label>Appointment Type:</label>
-        <input
-          type="text"
-          name="appointmentType"
-          value={appointment.appointmentType}
-          onChange={handleChange}
-          required
-        />
+// get an appointmentById
 
-        <label>Notes:</label>
-        <textarea
-          name="notes"
-          value={appointment.notes}
-          onChange={handleChange}
-        />
+router.delete("/:id", async (req, res) => {
+  try {
+    await Appointment.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Successfully Deleted Appointment" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-        <button type="submit">Update Appointment</button>
-      </form>
-    </div>
-  );
-}
+//get specific appointmentById
 
-export default EditAppointment;
+router.get("/:id", async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    res.status(200).json(appointment);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update an existing appointment
+router.put("/:id", async (req, res) => {
+  try {
+    const { doctorId, date, duration, appointmentType, patientName, notes } =
+      req.body;
+
+    // Validate input fields
+    if (!doctorId || !date || !duration || !appointmentType || !patientName) {
+      return res.status(400).json({ message: "Required All Fields" });
+    }
+
+    const appointmentStart = moment.utc(date);
+    const appointmentEnd = moment.utc(date).add(duration, "minutes");
+
+    // Find the appointment to update
+    const existingAppointment = await Appointment.findById(req.params.id);
+    if (!existingAppointment) {
+      return res.status(404).json({ message: "Appointment not found!" });
+    }
+
+    console.log(existingAppointment);
+
+    // Check for overlapping appointments (excluding the current one)
+    const overlappingAppointment = await Appointment.findOne({
+      doctorId,
+      _id: { $ne: req.params.id }, // Exclude the current appointment from the check
+      $or: [
+        {
+          date: {
+            $lt: appointmentEnd.toDate(),
+            $gte: appointmentStart.toDate(),
+          },
+        },
+        {
+          $expr: {
+            $and: [
+              {
+                $lt: [
+                  { $add: ["$date", { $multiply: ["$duration", 60000] }] },
+                  appointmentEnd.toDate(),
+                ],
+              },
+              { $gte: ["$date", appointmentStart.toDate()] },
+            ],
+          },
+        },
+      ],
+    });
+
+    if (overlappingAppointment) {
+      return res.status(409).json({ message: "Slot already booked!" });
+    }
+
+    // Update appointment details
+    existingAppointment.doctorId = doctorId;
+    existingAppointment.date = date;
+    existingAppointment.duration = duration;
+    existingAppointment.appointmentType = appointmentType;
+    existingAppointment.patientName = patientName;
+    existingAppointment.notes = notes || existingAppointment.notes;
+
+    await existingAppointment.save();
+
+    return res
+      .status(200)
+      .json({ message: "Appointment updated successfully!" });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+module.exports = router;
